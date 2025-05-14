@@ -1,0 +1,131 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>MSISDN Encryption Tool</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 font-sans text-gray-800">
+
+  <div class="max-w-xl mx-auto my-16 p-6 bg-white rounded-xl shadow-lg">
+    <h1 class="text-3xl font-bold text-center text-black-600 mb-6">MSISDN Encryption Tool</h1>
+    
+    <p class="mb-4 text-sm text-gray-600">
+      This tool encrypts Bangladeshi phone numbers (MSISDN) using AES encryption in CTR mode.
+    </p>
+
+    <div class="text-sm mb-6 text-gray-700">
+      <ol class="list-decimal ml-5">
+        <li>Pads the secret key to 16, 24, or 32 bytes</li>
+        <li>Pads the IV to 16 bytes</li>
+        <li>Encrypts the MSISDN</li>
+        <li>Returns the result in hexadecimal format</li>
+      </ol>
+    </div>
+
+    <div class="space-y-4">
+      <div class="form-group">
+        <label for="msisdn" class="block font-semibold">Phone Number (MSISDN):</label>
+        <input type="text" id="msisdn" placeholder="Example: 8801XXXXXXX"
+          class="w-full p-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-black-500" />
+      </div>
+
+      <div class="form-group">
+        <label for="secretKey" class="block font-semibold">Secret Key (default: 123):</label>
+        <input type="text" id="secretKey" placeholder="Optional"
+          class="w-full p-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-black-500" />
+      </div>
+
+      <div class="form-group">
+        <label for="iv" class="block font-semibold">Initialization Vector (IV) (default: 123):</label>
+        <input type="text" id="iv" placeholder="Optional"
+          class="w-full p-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-black-500" />
+      </div>
+
+      <p id="errorMsg" class="text-red-500 font-medium hidden"></p>
+
+      <button onclick="encryptMsisdn()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 rounded transition duration-200">
+        Encrypt
+      </button>
+
+      <div id="result" class="hidden bg-gray-100 border-l-4 border-green-500 p-4 rounded">
+        <h3 class="text-lg font-semibold mb-2 text-green-700">Encrypted Result:</h3>
+        <p id="encryptedValue" class="break-words text-sm"></p>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    function encryptMsisdn() {
+      const msisdnInput = document.getElementById('msisdn');
+      const secretKeyInput = document.getElementById('secretKey');
+      const ivInput = document.getElementById('iv');
+      const errorMsg = document.getElementById('errorMsg');
+      const resultBox = document.getElementById('result');
+      const encryptedOutput = document.getElementById('encryptedValue');
+
+      const msisdn = msisdnInput.value.trim();
+      const secretKey = secretKeyInput.value.trim() || '123';
+      const iv = ivInput.value.trim() || '123';
+
+      // Reset previous states
+      errorMsg.classList.add('hidden');
+      resultBox.classList.add('hidden');
+      encryptedOutput.textContent = '';
+
+      // Validation
+      if (!msisdn) {
+        errorMsg.textContent = '⚠️ Please enter a phone number.';
+        errorMsg.classList.remove('hidden');
+        return;
+      }
+
+      // Must be exactly 13 digits and start with '8801'
+      const msisdnPattern = /^8801\d{9}$/;
+      if (!msisdnPattern.test(msisdn)) {
+        errorMsg.textContent = '⚠️ MSISDN must be exactly 13 digits starting with "8801" (e.g., 8801XXXXXXX).';
+        errorMsg.classList.remove('hidden');
+        return;
+      }
+
+      try {
+        let keyBuffer;
+        const keyWordArray = CryptoJS.enc.Utf8.parse(secretKey);
+
+        if (secretKey.length <= 16) {
+          keyBuffer = CryptoJS.lib.WordArray.create(keyWordArray.words, 16);
+        } else if (secretKey.length <= 24) {
+          keyBuffer = CryptoJS.lib.WordArray.create(keyWordArray.words, 24);
+        } else {
+          keyBuffer = CryptoJS.lib.WordArray.create(keyWordArray.words, 32);
+        }
+
+        const ivWordArray = CryptoJS.enc.Utf8.parse(iv);
+        const ivBuffer = CryptoJS.lib.WordArray.create(ivWordArray.words, 16);
+
+        const encrypted = CryptoJS.AES.encrypt(msisdn, keyBuffer, {
+          mode: CryptoJS.mode.CTR,
+          iv: ivBuffer,
+          padding: CryptoJS.pad.NoPadding
+        });
+
+        const encryptedHex = encrypted.ciphertext.toString(CryptoJS.enc.Hex);
+
+        encryptedOutput.textContent = encryptedHex;
+        resultBox.classList.remove('hidden');
+
+      } catch (error) {
+        errorMsg.textContent = '❌ Encryption error: ' + error.message;
+        errorMsg.classList.remove('hidden');
+        console.error(error);
+      }
+    }
+  </script>
+
+</body>
+</html>
+
+ 
